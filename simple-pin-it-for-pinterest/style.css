@@ -1,0 +1,72 @@
+.pin-it-container {
+    position: relative;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+}
+
+.pinsavepinterest-pin-it-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    background-color: var(--pinsavepinterest-button-bg-color, #dd0b0b);
+    color: var(--pinsavepinterest-font-color, #ffffff);
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+    z-index: 10;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 1; 
+}
+
+.pinsavepinterest-pin-it-button:hover {
+    background-color: #b30000;
+    transform: scale(1.1);
+}
+
+.pinsavepinterest-network-icon svg {
+    margin-right: 5px;
+    fill: currentColor;
+    width: 20px;
+    height: 20px;
+}
+
+
+.pin-it-container.pinsavepinterest-autohide .pinsavepinterest-pin-it-button {
+    opacity: 0; 
+    transition: opacity 0.3s ease;
+}
+
+.pin-it-container.pinsavepinterest-autohide:hover .pinsavepinterest-pin-it-button {
+    opacity: 1; 
+}
+
+
+.pinsavepinterest-pin-it-button.top-left {
+    top: 5px;
+    left: 5px;
+}
+
+.pinsavepinterest-pin-it-button.top-right {
+    top: 5px;
+    right: 5px;
+    left: auto;
+}
+
+.pinsavepinterest-pin-it-button.bottom-left {
+    bottom: 5px;
+    left: 5px;
+    top: auto;
+}
+
+.pinsavepinterest-pin-it-button.bottom-right {
+    bottom: 5px;
+    right: 5px;
+    top: auto;
+    left: auto;
+}
