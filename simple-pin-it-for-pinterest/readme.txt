@@ -3,7 +3,7 @@ Contributors: sohel2g, soheldigital
 Tags: pin it button, save it button, pin it button, pin images, customizable pin it button
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,11 @@ Yes, Simple Pin It Button for Pinterest is tested with the latest WordPress vers
 
 
 == Changelog ==
+
+= 1.1 =
+
+- CSS Issue Fixed on Elementor
+
 
 = 1.0 =
 

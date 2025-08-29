@@ -2,7 +2,7 @@
 /*
 Plugin Name: Simple Pin It Button for Pinterest
 Description: Simple Pin It Button for Pinterest is a lightweight WordPress plugin that allows you to add a "Pin It" button overlay to images in your posts. The button is fully customizable through the plugin settings page. Encourage your visitors to share your content on Pinterest with ease!
-Version: 1.0
+Version: 1.1
 Author: Sohel Digital
 Author URI: https://sohel.digital
 License: GPLv2 or later
