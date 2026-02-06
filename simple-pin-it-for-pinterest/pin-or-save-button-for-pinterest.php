@@ -2,9 +2,9 @@
 /*
 Plugin Name: Simple Pin It Button for Pinterest
 Description: Simple Pin It Button for Pinterest is a lightweight WordPress plugin that allows you to add a "Pin It" button overlay to images in your posts. The button is fully customizable through the plugin settings page. Encourage your visitors to share your content on Pinterest with ease!
-Version: 1.1
-Author: Sohel Digital
-Author URI: https://sohel.digital
+Version: 1.2
+Author: Sohel Rana
+Author URI: https://sohel.dev
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 */
@@ -16,26 +16,69 @@ function pinsavepinterest_enqueue_styles() {
         'pinsavepinterest-style',
         plugin_dir_url(__FILE__) . 'style.css',
         [],
-        '1.0'
+        '1.2'
     );
 }
 add_action('wp_enqueue_scripts', 'pinsavepinterest_enqueue_styles');
 
 
 function pinsavepinterest_enqueue_admin_scripts($hook) {
-   
-    if ($hook != 'settings_page_pin-it-or-save-it-button') {
+    if ($hook != 'toplevel_page_pin-it-or-save-it-button') {
         return;
     }
+    
+    // Enqueue Bootstrap CSS
+    wp_enqueue_style(
+        'pinsavepinterest-bootstrap',
+        plugin_dir_url(__FILE__) . 'assets/css/bootstrap.min.css',
+        [],
+        '5.3.2'
+    );
+    
+    // Enqueue Bootstrap Icons
+    wp_enqueue_style(
+        'pinsavepinterest-bootstrap-icons',
+        plugin_dir_url(__FILE__) . 'assets/css/bootstrap-icons.css',
+        [],
+        '1.11.1'
+    );
+    
+    // Enqueue custom admin CSS
+    wp_enqueue_style(
+        'pinsavepinterest-admin-custom',
+        plugin_dir_url(__FILE__) . 'assets/css/admin-custom.css',
+        ['pinsavepinterest-bootstrap', 'pinsavepinterest-bootstrap-icons'],
+        '1.1'
+    );
+    
+    // Enqueue WordPress color picker (fallback)
     wp_enqueue_script('wp-color-picker');
     wp_enqueue_style('wp-color-picker');
-    wp_add_inline_script('wp-color-picker', '
-        (function($) {
-            $(function() {
-                $(".pinsavepinterest-color-field").wpColorPicker();
-            });
-        })(jQuery);
-    ');
+    
+    // Enqueue Bootstrap JavaScript
+    wp_enqueue_script(
+        'pinsavepinterest-bootstrap',
+        plugin_dir_url(__FILE__) . 'assets/js/bootstrap.bundle.min.js',
+        [],
+        '5.3.2',
+        true
+    );
+    
+    // Enqueue custom admin JavaScript
+    wp_enqueue_script(
+        'pinsavepinterest-admin-settings',
+        plugin_dir_url(__FILE__) . 'assets/js/admin-settings.js',
+        ['jquery', 'wp-color-picker', 'pinsavepinterest-bootstrap'],
+        '1.1',
+        true
+    );
+    
+    // Localize script for AJAX
+    wp_localize_script('pinsavepinterest-admin-settings', 'pinsavepinterest_ajax', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('pinsavepinterest_nonce'),
+        'plugin_url' => plugin_dir_url(__FILE__)
+    ]);
 }
 add_action('admin_enqueue_scripts', 'pinsavepinterest_enqueue_admin_scripts');
 
@@ -78,61 +121,184 @@ add_filter('the_content', 'pinsavepinterest_add_pin_it_button_to_images');
 
 
 function pinsavepinterest_create_menu() {
-    add_options_page(
-        'Simple Pin It Button',
-        'Simple Pin It Button',
+    add_menu_page(
+        'PIN BUTTON Settings',
+        'PIN BUTTON',
         'manage_options',
         'pin-it-or-save-it-button',
-        'pinsavepinterest_settings_page'
+        'pinsavepinterest_settings_page',
+        'dashicons-pinterest',
+        26
     );
 }
 add_action('admin_menu', 'pinsavepinterest_create_menu');
 
 
 function pinsavepinterest_settings_page() {
-    ?>
-    <div class="wrap">
-        <h1>Simple Pin It Button for Pinterest</h1>
-        <form method="post" action="options.php">
-            <?php settings_fields('pinsavepinterest-settings-group'); ?>
-            <?php do_settings_sections('pinsavepinterest-settings-group'); ?>
-            <table class="form-table">
-                <tr valign="top">
-                    <th scope="row">Button Location</th>
-                    <td>
-                        <select name="pinsavepinterest_button_location">
-                            <option value="top-left" <?php selected(get_option('pinsavepinterest_button_location'), 'top-left'); ?>>Top Left</option>
-                            <option value="top-right" <?php selected(get_option('pinsavepinterest_button_location'), 'top-right'); ?>>Top Right</option>
-                            <option value="bottom-left" <?php selected(get_option('pinsavepinterest_button_location'), 'bottom-left'); ?>>Bottom Left</option>
-                            <option value="bottom-right" <?php selected(get_option('pinsavepinterest_button_location'), 'bottom-right'); ?>>Bottom Right</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">Button Background Color</th>
-                    <td><input type="text" name="pinsavepinterest_button_bg_color" class="pinsavepinterest-color-field" value="<?php echo esc_attr(get_option('pinsavepinterest_button_bg_color', '#dd0b0b')); ?>" /></td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">Font Color</th>
-                    <td><input type="text" name="pinsavepinterest_font_color" class="pinsavepinterest-color-field" value="<?php echo esc_attr(get_option('pinsavepinterest_font_color', '#ffffff')); ?>" /></td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">Autohide (on hover)</th>
-                    <td>
-                        <input type="checkbox" name="pinsavepinterest_autohide" value="1" <?php checked(1, get_option('pinsavepinterest_autohide'), true); ?> /> Enable Autohide
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">Pin It Text</th>
-                    <td><input type="text" name="pinsavepinterest_pin_text" value="<?php echo esc_attr(get_option('pinsavepinterest_pin_text', 'PIN IT')); ?>" /></td>
-                </tr>
-            </table>
-            <?php submit_button(); ?>
-        </form>
-    </div>
-    <?php
+    // Handle form submission
+    if (isset($_POST['submit']) && isset($_POST['_wpnonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['_wpnonce']));
+        if (wp_verify_nonce($nonce, 'pinsavepinterest-settings-group-options')) {
+        // Validate and process form data
+        $valid_locations = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+        $button_location = isset($_POST['pinsavepinterest_button_location']) ? sanitize_text_field(wp_unslash($_POST['pinsavepinterest_button_location'])) : 'top-right';
+        if (!in_array($button_location, $valid_locations)) {
+            $button_location = 'top-right';
+        }
+        
+        $button_bg_color = isset($_POST['pinsavepinterest_button_bg_color']) ? sanitize_hex_color(wp_unslash($_POST['pinsavepinterest_button_bg_color'])) : '#E60023';
+        if (empty($button_bg_color)) {
+            $button_bg_color = '#E60023';
+        }
+        
+        $font_color = isset($_POST['pinsavepinterest_font_color']) ? sanitize_hex_color(wp_unslash($_POST['pinsavepinterest_font_color'])) : '#ffffff';
+        if (empty($font_color)) {
+            $font_color = '#ffffff';
+        }
+        
+        $pin_text = isset($_POST['pinsavepinterest_pin_text']) ? sanitize_text_field(wp_unslash($_POST['pinsavepinterest_pin_text'])) : 'Save';
+        if (empty($pin_text) || strlen($pin_text) > 20) {
+            $pin_text = 'Save';
+        }
+        
+        $autohide = isset($_POST['pinsavepinterest_autohide']) ? 1 : 0;
+        
+        // Update options - track if any actual errors occur
+        $errors = [];
+        
+        // Update each option and check for actual errors (not just unchanged values)
+        $result1 = update_option('pinsavepinterest_button_location', $button_location);
+        $result2 = update_option('pinsavepinterest_button_bg_color', $button_bg_color);
+        $result3 = update_option('pinsavepinterest_font_color', $font_color);
+        $result4 = update_option('pinsavepinterest_pin_text', $pin_text);
+        $result5 = update_option('pinsavepinterest_autohide', $autohide);
+               
+        // Check if values were actually saved by comparing with current values
+        $saved_location = get_option('pinsavepinterest_button_location');
+        $saved_bg_color = get_option('pinsavepinterest_button_bg_color');
+        $saved_font_color = get_option('pinsavepinterest_font_color');
+        $saved_pin_text = get_option('pinsavepinterest_pin_text');
+        $saved_autohide = get_option('pinsavepinterest_autohide');
+        
+        // Verify that the values match what we tried to save
+        // Note: We use loose comparison for autohide since it might be stored as string
+        if ($saved_location !== $button_location) $errors[] = 'button_location';
+        if ($saved_bg_color !== $button_bg_color) $errors[] = 'button_bg_color';
+        if ($saved_font_color !== $font_color) $errors[] = 'font_color';
+        if ($saved_pin_text !== $pin_text) $errors[] = 'pin_text';
+        if ($saved_autohide != $autohide) $errors[] = 'autohide';
+        
+        
+        // Show appropriate message
+        if (empty($errors)) {
+            // Success message is handled by JavaScript toast in the template
+            // No need for WordPress admin notice here
+        } else {
+            $error_msg = __('Error saving settings: ', 'simple-pin-it-for-pinterest') . implode(', ', $errors) . __('. Please try again.', 'simple-pin-it-for-pinterest');
+            add_settings_error('pinsavepinterest_messages', 'pinsavepinterest_error', $error_msg, 'error');
+        }
+        }
+    }
+    
+    // Get current values
+    $button_location = get_option('pinsavepinterest_button_location', 'top-right');
+    $button_bg_color = get_option('pinsavepinterest_button_bg_color', '#E60023');
+    $font_color = get_option('pinsavepinterest_font_color', '#ffffff');
+    $pin_text = get_option('pinsavepinterest_pin_text', 'Save');
+    $autohide = get_option('pinsavepinterest_autohide', false);
+    
+    // Include the template
+    $template_path = plugin_dir_path(__FILE__) . 'templates/admin-settings-page.php';
+    if (file_exists($template_path)) {
+        include $template_path;
+    } else {
+        // Fallback to basic HTML if template doesn't exist
+        echo '<div class="wrap"><h1>Simple Pin It Button for Pinterest</h1><p>Settings template not found. Please check plugin installation.</p></div>';
+    }
 }
 
+
+// AJAX endpoints for enhanced functionality
+function pinsavepinterest_ajax_validate_settings() {
+    // Verify nonce
+    if (!isset($_POST['nonce'])) {
+        wp_die('Security check failed');
+    }
+    $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    if (!wp_verify_nonce($nonce, 'pinsavepinterest_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    $errors = [];
+    
+    // Validate button location
+    $valid_locations = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    $button_location = isset($_POST['button_location']) ? sanitize_text_field(wp_unslash($_POST['button_location'])) : '';
+    if (!in_array($button_location, $valid_locations)) {
+        $errors['button_location'] = 'Invalid button location';
+    }
+    
+    // Validate colors
+    $button_bg_color = isset($_POST['button_bg_color']) ? sanitize_text_field(wp_unslash($_POST['button_bg_color'])) : '';
+    if (!empty($button_bg_color) && !preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $button_bg_color)) {
+        $errors['button_bg_color'] = 'Invalid background color format';
+    }
+    
+    $font_color = isset($_POST['font_color']) ? sanitize_text_field(wp_unslash($_POST['font_color'])) : '';
+    if (!empty($font_color) && !preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $font_color)) {
+        $errors['font_color'] = 'Invalid font color format';
+    }
+    
+    // Validate pin text
+    $pin_text = isset($_POST['pin_text']) ? sanitize_text_field(wp_unslash($_POST['pin_text'])) : '';
+    if (empty($pin_text)) {
+        $errors['pin_text'] = 'Pin text is required';
+    } elseif (strlen($pin_text) > 20) {
+        $errors['pin_text'] = 'Pin text must be 20 characters or less';
+    }
+    
+    wp_send_json([
+        'success' => empty($errors),
+        'errors' => $errors
+    ]);
+}
+add_action('wp_ajax_pinsavepinterest_validate_settings', 'pinsavepinterest_ajax_validate_settings');
+
+function pinsavepinterest_ajax_preview_button() {
+    // Verify nonce
+    if (!isset($_POST['nonce'])) {
+        wp_die('Security check failed');
+    }
+    $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    if (!wp_verify_nonce($nonce, 'pinsavepinterest_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    $button_location = isset($_POST['button_location']) ? sanitize_text_field(wp_unslash($_POST['button_location'])) : 'top-right';
+    $button_bg_color = isset($_POST['button_bg_color']) ? sanitize_hex_color(wp_unslash($_POST['button_bg_color'])) : '#E60023';
+    $font_color = isset($_POST['font_color']) ? sanitize_hex_color(wp_unslash($_POST['font_color'])) : '#ffffff';
+    $pin_text = isset($_POST['pin_text']) ? sanitize_text_field(wp_unslash($_POST['pin_text'])) : 'Save';
+    $autohide = isset($_POST['autohide']) && sanitize_text_field(wp_unslash($_POST['autohide'])) === 'true';
+    
+    $preview_html = sprintf(
+        '<a href="#" class="pinsavepinterest-preview-button %s" onclick="return false;" style="background-color: %s; color: %s; border-color: %s;">
+            <i class="bi bi-pinterest"></i>
+            <span class="pinsavepinterest-preview-text">%s</span>
+        </a>',
+        esc_attr($button_location),
+        esc_attr($button_bg_color),
+        esc_attr($font_color),
+        esc_attr($button_bg_color),
+        esc_html($pin_text)
+    );
+    
+    wp_send_json([
+        'success' => true,
+        'html' => $preview_html,
+        'autohide' => $autohide
+    ]);
+}
+add_action('wp_ajax_pinsavepinterest_preview_button', 'pinsavepinterest_ajax_preview_button');
 
 function pinsavepinterest_register_settings() {
     register_setting(
